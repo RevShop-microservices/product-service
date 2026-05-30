@@ -75,10 +75,26 @@ public class ProductService {
 
     public Products getProductById(String id) {
         log.info("Fetching product with ID: {}", id);
-        return repository.findById(id).orElseThrow(() -> {
+        Products product = repository.findById(id).orElse(null);
+        if (product == null) {
+            try {
+                if (id != null && id.matches("\\d+")) {
+                    Object parsedId = Integer.parseInt(id);
+                    product = mongoTemplate.findById(parsedId, Products.class);
+                    if (product == null) {
+                        parsedId = Long.parseLong(id);
+                        product = mongoTemplate.findById(parsedId, Products.class);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Failed to query product by numeric ID: {}", e.getMessage());
+            }
+        }
+        if (product == null) {
             log.error("Product not found with ID: {}", id);
-            return new ProductNotFoundException("Product not found");
-        });
+            throw new ProductNotFoundException("Product not found");
+        }
+        return product;
     }
 
     public Products updateProduct(String id, ProductRequestDTO dto, Long sellerId) {
@@ -220,15 +236,13 @@ public class ProductService {
     }
 
     public ProductResponseDTO getProduct(String id) {
-        Products product = repository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+        Products product = getProductById(id);
         return mapToDTO(product);
     }
 
     @Transactional
     public void reduceStock(String id, int quantity) {
-        Products product = repository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+        Products product = getProductById(id);
         if (product.getStock() < quantity) {
             throw new InvalidRequestException("Insufficient stock");
         }
@@ -238,8 +252,7 @@ public class ProductService {
 
     @Transactional
     public void increaseStock(String id, int quantity) {
-        Products product = repository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+        Products product = getProductById(id);
 
         product.setStock(product.getStock() + quantity);
         repository.save(product);
