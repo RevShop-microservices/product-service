@@ -12,7 +12,7 @@ import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 
 @Entity
-@Table(name = "order_items")
+@Table(name = "order_items1")
 @Access(AccessType.FIELD)
 public class OrderItem {
 

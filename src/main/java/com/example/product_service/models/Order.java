@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders1")
 @Access(AccessType.FIELD)
 public class Order {
 
